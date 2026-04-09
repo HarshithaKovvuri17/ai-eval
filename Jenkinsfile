@@ -79,23 +79,21 @@ pipeline {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
                         if (isUnix()) {
-                            // Secure the key (ssh is strict)
                             sh "chmod 600 ${SSH_KEY}"
-                            // Ensure directory exists
                             sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'mkdir -p /home/ubuntu/app'"
-                            // Copy production compose file
                             sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             
-                            // Write .env file from Jenkins Secret
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
+                                // Write .env and ensure it has newlines on Linux
                                 writeFile file: '.env', text: ENV_CONTENT
                                 sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} .env ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/.env"
                             }
 
-                            // Deploy - Forceful restart to fix KeyError and Env loading
+                            // Verify .env formatting and logs
+                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && echo \"Lines in .env:\" && wc -l .env && grep \"MONGODB_URI\" .env || echo \"FAILED TO FIND MONGODB_URI\"'"
+
                             sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && docker-compose down && docker-compose pull && docker-compose up -d && docker image prune -f'"
                         } else {
-                            // Secure the key for Windows using PowerShell
                             powershell """
                                 \$path = '${SSH_KEY}'
                                 \$acl = Get-Acl \$path
@@ -105,18 +103,19 @@ pipeline {
                                 \$acl.SetAccessRule(\$accessRule)
                                 Set-Acl \$path \$acl
                             """
-                            // Ensure directory exists
                             bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"mkdir -p /home/ubuntu/app\""
-                            // Copy production compose file
                             bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             
-                            // Write .env file from Jenkins Secret
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
-                                writeFile file: '.env', text: ENV_CONTENT
+                                // Fix newline issue for Windows->Linux transfer
+                                def sanitizedEnv = ENV_CONTENT.replace('\r\n', '\n')
+                                writeFile file: '.env', text: sanitizedEnv
                                 bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} .env ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/.env"
                             }
 
-                            // Deploy - Forceful restart to fix KeyError and Env loading
+                            // Verify .env formatting
+                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"cd /home/ubuntu/app && echo 'Lines in .env:' && wc -l .env && grep 'MONGODB_URI' .env\""
+
                             bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"cd /home/ubuntu/app && docker-compose down && docker-compose pull && docker-compose up -d && docker image prune -f\""
                         }
                     }
