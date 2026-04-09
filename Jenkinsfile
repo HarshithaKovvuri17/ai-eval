@@ -74,6 +74,23 @@ pipeline {
             }
         }
 
+        stage('Deploy to EC2') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                        if (isUnix()) {
+                            sh "chmod 600 ${SSH_KEY}"
+                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'sudo mkdir -p /home/ubuntu/app/certificates && sudo chmod 777 /home/ubuntu/app/certificates'"
+                            sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
+                            
+                            withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
+                                def repairedEnv = ENV_CONTENT.replaceAll(/ (?=#|PORT|FRONTEND|MONGODB|JWT|GOOGLE|EMAIL|AI)/, "\n").trim()
+                                writeFile file: '.env', text: repairedEnv
+                                sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} .env ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/.env"
+                            }
+
+                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && docker-compose down && docker-compose pull && docker-compose up -d && docker image prune -f'"
+                            
                             // Verify Certificates and Permissions
                             sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && echo \"Certificate Permissions:\" && ls -ld certificates && echo \"Generated Certificates:\" && ls -lh certificates || echo \"No certificates yet\"'"
                             
