@@ -62,6 +62,12 @@ pipeline {
                             sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'mkdir -p /home/ubuntu/app'"
                             // Copy production compose file
                             sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
+                            
+                            // Write .env file from Jenkins Secret
+                            withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
+                                sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"echo '${ENV_CONTENT}' > /home/ubuntu/app/.env\""
+                            }
+
                             // Deploy
                             sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && docker-compose pull && docker-compose up -d && docker image prune -f'"
                         } else {
@@ -79,6 +85,12 @@ pipeline {
                             bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"mkdir -p /home/ubuntu/app\""
                             // Copy production compose file
                             bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
+                            
+                            // Write .env file from Jenkins Secret
+                            withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
+                                bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"echo ${ENV_CONTENT} > /home/ubuntu/app/.env\""
+                            }
+
                             // Deploy
                             bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"cd /home/ubuntu/app && docker-compose pull && docker-compose up -d && docker image prune -f\""
                         }
