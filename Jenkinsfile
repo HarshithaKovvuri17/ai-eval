@@ -12,13 +12,13 @@ pipeline {
     }
 
     stages {
-        stage('Check Runtime Logs') {
+        stage('Verify .env File') {
             steps {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
                         if (isUnix()) {
                             sh "chmod 600 ${SSH_KEY}"
-                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && sudo docker-compose logs --tail=200 backend'"
+                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'grep MONGODB_URI /home/ubuntu/app/.env || echo \"MISSING MONGODB_URI\"'"
                         } else {
                             powershell """
                                 \$path = '${SSH_KEY}'
@@ -29,7 +29,7 @@ pipeline {
                                 \$acl.SetAccessRule(\$accessRule)
                                 Set-Acl \$path \$acl
                             """
-                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"cd /home/ubuntu/app && sudo docker-compose logs --tail=200 backend\""
+                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"grep MONGODB_URI /home/ubuntu/app/.env || echo 'MISSING MONGODB_URI'\""
                         }
                     }
                 }
