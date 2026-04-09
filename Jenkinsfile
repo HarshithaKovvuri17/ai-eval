@@ -8,7 +8,7 @@ pipeline {
         BACKEND_IMAGE = "${DOCKER_REGISTRY_USER}/${PROJECT_NAME}-backend"
         FRONTEND_IMAGE = "${DOCKER_REGISTRY_USER}/${PROJECT_NAME}-frontend"
         EC2_USER = 'ubuntu'
-        EC2_IP = 'YOUR_EC2_IP' // Set this in Jenkins credentials or here
+        EC2_IP = '34.228.170.191' // Actual EC2 Public IP
     }
 
     stages {
