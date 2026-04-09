@@ -63,7 +63,7 @@ pipeline {
                             // Copy production compose file
                             sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             // Deploy
-                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && docker compose pull && docker compose up -d && docker image prune -f'"
+                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && docker-compose pull && docker-compose up -d && docker image prune -f'"
                         } else {
                             // Secure the key for Windows using PowerShell
                             powershell """
@@ -80,7 +80,7 @@ pipeline {
                             // Copy production compose file
                             bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             // Deploy
-                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"cd /home/ubuntu/app && docker compose pull && docker compose up -d && docker image prune -f\""
+                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"cd /home/ubuntu/app && docker-compose pull && docker-compose up -d && docker image prune -f\""
                         }
                     }
                 }
