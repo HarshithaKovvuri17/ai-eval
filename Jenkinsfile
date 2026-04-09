@@ -51,6 +51,22 @@ pipeline {
             }
         }
 
+        stage('Diagnostics') {
+            when {
+                expression { true } // Run this manually or on failure
+            }
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                        if (isUnix()) {
+                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && docker-compose ps && docker-compose logs --tail=100 backend'"
+                        } else {
+                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"cd /home/ubuntu/app && docker-compose ps && docker-compose logs --tail=100 backend\""
+                        }
+                    }
+                }
+            }
+        }
         stage('Deploy to EC2') {
             steps {
                 script {
