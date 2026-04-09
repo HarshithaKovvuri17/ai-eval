@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // Change these to your actual values
-        DOCKER_REGISTRY_USER = 'charankurupudi' 
+        DOCKER_REGISTRY_USER = 'charan6465' 
         PROJECT_NAME = 'ai-eval'
         BACKEND_IMAGE = "${DOCKER_REGISTRY_USER}/${PROJECT_NAME}-backend"
         FRONTEND_IMAGE = "${DOCKER_REGISTRY_USER}/${PROJECT_NAME}-frontend"
