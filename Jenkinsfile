@@ -55,7 +55,8 @@ pipeline {
             steps {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                        if (isUnix()) {
+                            // Secure the key (ssh is strict)
+                            sh "chmod 600 ${SSH_KEY}"
                             // Ensure directory exists
                             sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'mkdir -p /home/ubuntu/app'"
                             // Copy production compose file
@@ -63,6 +64,9 @@ pipeline {
                             // Deploy
                             sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && docker compose pull && docker compose up -d && docker image prune -f'"
                         } else {
+                            // Secure the key for Windows
+                            bat "icacls ${SSH_KEY} /inheritance:r"
+                            bat "icacls ${SSH_KEY} /grant:r \"%USERNAME%:F\""
                             // Ensure directory exists
                             bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"mkdir -p /home/ubuntu/app\""
                             // Copy production compose file
