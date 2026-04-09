@@ -65,7 +65,8 @@ pipeline {
                             
                             // Write .env file from Jenkins Secret
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
-                                sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"echo '${ENV_CONTENT}' > /home/ubuntu/app/.env\""
+                                writeFile file: '.env', text: ENV_CONTENT
+                                sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} .env ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/.env"
                             }
 
                             // Deploy
@@ -88,7 +89,8 @@ pipeline {
                             
                             // Write .env file from Jenkins Secret
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
-                                bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"echo ${ENV_CONTENT} > /home/ubuntu/app/.env\""
+                                writeFile file: '.env', text: ENV_CONTENT
+                                bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} .env ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/.env"
                             }
 
                             // Deploy
