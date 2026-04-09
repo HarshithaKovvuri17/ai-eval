@@ -55,6 +55,7 @@ pipeline {
             steps {
                 script {
                     withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                        if (isUnix()) {
                             // Secure the key (ssh is strict)
                             sh "chmod 600 ${SSH_KEY}"
                             // Ensure directory exists
