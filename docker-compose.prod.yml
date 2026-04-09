@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    image: charankurupudi/ai-eval-backend:latest
+    container_name: ai-eval-backend
+    env_file:
+      - .env
+    restart: always
+    volumes:
+      - ./certificates:/app/certificates
+    networks:
+      - ai-network
+
+  frontend:
+    image: charankurupudi/ai-eval-frontend:latest
+    container_name: ai-eval-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - ai-network
+
+networks:
+  ai-network:
+    driver: bridge
