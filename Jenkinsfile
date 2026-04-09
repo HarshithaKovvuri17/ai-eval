@@ -54,31 +54,22 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 script {
-                    def remote = [:]
-                    remote.name = 'EC2-Production'
-                    remote.host = env.EC2_IP
-                    remote.user = env.EC2_USER
-                    remote.allowAnyHosts = true
-
                     withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                        remote.identity = SSH_KEY
-                        
-                        // Commands to run on EC2
-                        sshCommand remote: remote, command: """
-                            cd /home/ubuntu/app || mkdir -p /home/ubuntu/app && cd /home/ubuntu/app
-                            # Copy docker-compose.yml from the job (simplest way for this setup)
-                            # In a real setup, you might scp it or pull the repo on EC2
-                        """
-                        
-                        // Alternative scp of docker-compose
-                        sshPut remote: remote, from: 'docker-compose.prod.yml', into: '/home/ubuntu/app/docker-compose.yml'
-                        
-                        sshCommand remote: remote, command: """
-                            cd /home/ubuntu/app
-                            docker compose pull
-                            docker compose up -d
-                            docker image prune -f
-                        """
+                        if (isUnix()) {
+                            // Ensure directory exists
+                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'mkdir -p /home/ubuntu/app'"
+                            // Copy production compose file
+                            sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
+                            // Deploy
+                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && docker compose pull && docker compose up -d && docker image prune -f'"
+                        } else {
+                            // Ensure directory exists
+                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"mkdir -p /home/ubuntu/app\""
+                            // Copy production compose file
+                            bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
+                            // Deploy
+                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"cd /home/ubuntu/app && docker compose pull && docker compose up -d && docker image prune -f\""
+                        }
                     }
                 }
             }
