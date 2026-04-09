@@ -80,7 +80,7 @@ pipeline {
                     withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
                         if (isUnix()) {
                             sh "chmod 600 ${SSH_KEY}"
-                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'mkdir -p /home/ubuntu/app/certificates && chmod 777 /home/ubuntu/app/certificates'"
+                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'sudo mkdir -p /home/ubuntu/app/certificates && sudo chmod 777 /home/ubuntu/app/certificates'"
                             sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
@@ -103,7 +103,7 @@ pipeline {
                                 \$acl.SetAccessRule(\$accessRule)
                                 Set-Acl \$path \$acl
                             """
-                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"mkdir -p /home/ubuntu/app/certificates && chmod 777 /home/ubuntu/app/certificates\""
+                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"sudo mkdir -p /home/ubuntu/app/certificates && sudo chmod 777 /home/ubuntu/app/certificates\""
                             bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
