@@ -84,12 +84,12 @@ pipeline {
                             sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
-                                // Write .env and ensure it has newlines on Linux
-                                writeFile file: '.env', text: ENV_CONTENT
-                                sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} .env ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/.env"
+                                // Use Base64 to preserve newlines and special characters perfectly
+                                def b64Env = ENV_CONTENT.bytes.encodeBase64().toString()
+                                sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"echo '${b64Env}' | base64 -d > /home/ubuntu/app/.env\""
                             }
 
-                            // Verify .env formatting and logs
+                            // Verify .env formatting
                             sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && echo \"Lines in .env:\" && wc -l .env && grep \"MONGODB_URI\" .env || echo \"FAILED TO FIND MONGODB_URI\"'"
 
                             sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && docker-compose down && docker-compose pull && docker-compose up -d && docker image prune -f'"
@@ -107,10 +107,9 @@ pipeline {
                             bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
-                                // Fix newline issue for Windows->Linux transfer
-                                def sanitizedEnv = ENV_CONTENT.replace('\r\n', '\n')
-                                writeFile file: '.env', text: sanitizedEnv
-                                bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} .env ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/.env"
+                                // Use Base64 to preserve newlines perfectly during Windows->Linux transfer
+                                def b64Env = ENV_CONTENT.bytes.encodeBase64().toString()
+                                bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"echo ${b64Env} | base64 -d > /home/ubuntu/app/.env\""
                             }
 
                             // Verify .env formatting
