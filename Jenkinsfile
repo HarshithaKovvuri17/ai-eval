@@ -23,7 +23,11 @@ pipeline {
                 script {
                     def scannerHome = tool 'SonarScanner'
                     withSonarQubeEnv('SonarQubeServer') {
-                        sh "${scannerHome}/bin/sonar-scanner"
+                        if (isUnix()) {
+                            sh "${scannerHome}/bin/sonar-scanner"
+                        } else {
+                            bat "${scannerHome}\\bin\\sonar-scanner.bat"
+                        }
                     }
                 }
             }
