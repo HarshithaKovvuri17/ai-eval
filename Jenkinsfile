@@ -84,9 +84,10 @@ pipeline {
                             sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
-                                // Use Base64 to preserve newlines and special characters perfectly
-                                def b64Env = ENV_CONTENT.bytes.encodeBase64().toString()
-                                sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"echo '${b64Env}' | base64 -d > /home/ubuntu/app/.env\""
+                                // Repair formatting: Insert newlines before keys if they were flattened
+                                def repairedEnv = ENV_CONTENT.replaceAll(/ (?=#|PORT|FRONTEND|MONGODB|JWT|GOOGLE|EMAIL|AI)/, "\n").trim()
+                                writeFile file: '.env', text: repairedEnv
+                                sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} .env ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/.env"
                             }
 
                             // Verify .env formatting
@@ -107,9 +108,10 @@ pipeline {
                             bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
-                                // Use Base64 to preserve newlines perfectly during Windows->Linux transfer
-                                def b64Env = ENV_CONTENT.bytes.encodeBase64().toString()
-                                bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"echo ${b64Env} | base64 -d > /home/ubuntu/app/.env\""
+                                // Repair formatting: Insert newlines before keys if they were flattened
+                                def repairedEnv = ENV_CONTENT.replaceAll(/ (?=#|PORT|FRONTEND|MONGODB|JWT|GOOGLE|EMAIL|AI)/, "\n").trim()
+                                writeFile file: '.env', text: repairedEnv
+                                bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} .env ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/.env"
                             }
 
                             // Verify .env formatting
