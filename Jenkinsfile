@@ -65,9 +65,16 @@ pipeline {
                             // Deploy
                             sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && docker compose pull && docker compose up -d && docker image prune -f'"
                         } else {
-                            // Secure the key for Windows
-                            bat "icacls ${SSH_KEY} /inheritance:r"
-                            bat "icacls ${SSH_KEY} /grant:r \"%USERNAME%:F\""
+                            // Secure the key for Windows using PowerShell
+                            powershell """
+                                \$path = '${SSH_KEY}'
+                                \$acl = Get-Acl \$path
+                                \$acl.SetAccessRuleProtection(\$true, \$false)
+                                \$currentPrincipal = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+                                \$accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule(\$currentPrincipal, "FullControl", "Allow")
+                                \$acl.SetAccessRule(\$accessRule)
+                                Set-Acl \$path \$acl
+                            """
                             // Ensure directory exists
                             bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"mkdir -p /home/ubuntu/app\""
                             // Copy production compose file
