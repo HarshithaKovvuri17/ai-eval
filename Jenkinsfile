@@ -80,20 +80,19 @@ pipeline {
                     withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'SSH_KEY')]) {
                         if (isUnix()) {
                             sh "chmod 600 ${SSH_KEY}"
-                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'mkdir -p /home/ubuntu/app'"
+                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'mkdir -p /home/ubuntu/app/certificates && chmod 777 /home/ubuntu/app/certificates'"
                             sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
-                                // Repair formatting: Insert newlines before keys if they were flattened
                                 def repairedEnv = ENV_CONTENT.replaceAll(/ (?=#|PORT|FRONTEND|MONGODB|JWT|GOOGLE|EMAIL|AI)/, "\n").trim()
                                 writeFile file: '.env', text: repairedEnv
                                 sh "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} .env ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/.env"
                             }
 
-                            // Verify .env formatting
-                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && echo \"Lines in .env:\" && wc -l .env && grep \"MONGODB_URI\" .env || echo \"FAILED TO FIND MONGODB_URI\"'"
-
                             sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && docker-compose down && docker-compose pull && docker-compose up -d && docker image prune -f'"
+                            
+                            // Verify Certificates and Permissions
+                            sh "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} 'cd /home/ubuntu/app && echo \"Certificate Permissions:\" && ls -ld certificates && echo \"Generated Certificates:\" && ls -lh certificates || echo \"No certificates yet\"'"
                         } else {
                             powershell """
                                 \$path = '${SSH_KEY}'
@@ -104,20 +103,19 @@ pipeline {
                                 \$acl.SetAccessRule(\$accessRule)
                                 Set-Acl \$path \$acl
                             """
-                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"mkdir -p /home/ubuntu/app\""
+                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"mkdir -p /home/ubuntu/app/certificates && chmod 777 /home/ubuntu/app/certificates\""
                             bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} docker-compose.prod.yml ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/docker-compose.yml"
                             
                             withCredentials([string(credentialsId: 'backend-env', variable: 'ENV_CONTENT')]) {
-                                // Repair formatting: Insert newlines before keys if they were flattened
                                 def repairedEnv = ENV_CONTENT.replaceAll(/ (?=#|PORT|FRONTEND|MONGODB|JWT|GOOGLE|EMAIL|AI)/, "\n").trim()
                                 writeFile file: '.env', text: repairedEnv
                                 bat "scp -o StrictHostKeyChecking=no -i ${SSH_KEY} .env ${env.EC2_USER}@${env.EC2_IP}:/home/ubuntu/app/.env"
                             }
 
-                            // Verify .env formatting
-                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"cd /home/ubuntu/app && echo 'Lines in .env:' && wc -l .env && grep 'MONGODB_URI' .env\""
-
                             bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"cd /home/ubuntu/app && docker-compose down && docker-compose pull && docker-compose up -d && docker image prune -f\""
+                            
+                            // Verify Certificates and Permissions
+                            bat "ssh -o StrictHostKeyChecking=no -i ${SSH_KEY} ${env.EC2_USER}@${env.EC2_IP} \"cd /home/ubuntu/app && echo 'Certificate Permissions:' && ls -ld certificates && echo 'Generated Certificates:' && ls -lh certificates\""
                         }
                     }
                 }
