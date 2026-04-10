@@ -41,14 +41,18 @@ app.use((err, req, res, next) => {
 });
 
 // ── Database + Server ─────────────────────────────────────────────────────────
-mongoose
-  .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ai_eval_system')
-  .then(() => {
-    console.log('✅ MongoDB connected');
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on http://localhost:${PORT}`);
-      console.log(`🤖 AI Engine: Google Gemini (gemini-flash-latest)`);
-    });
-  })
-  .catch(err => { console.error('❌ MongoDB error:', err); process.exit(1); });
+if (process.env.NODE_ENV !== 'test') {
+  mongoose
+    .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/ai_eval_system')
+    .then(() => {
+      console.log('✅ MongoDB connected');
+      const PORT = process.env.PORT || 5000;
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+        console.log(`🤖 AI Engine: Google Gemini (gemini-flash-latest)`);
+      });
+    })
+    .catch(err => { console.error('❌ MongoDB error:', err); process.exit(1); });
+}
+
+module.exports = app;
