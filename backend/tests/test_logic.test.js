@@ -12,7 +12,8 @@ jest.mock('../middleware/auth', () => ({
   protect: (req, res, next) => {
     req.user = mockUser;
     next();
-  }
+  },
+  adminOnly: (req, res, next) => next()
 }));
 jest.mock('../services/certificateService', () => ({
   generateCertificate: jest.fn().mockResolvedValue({ certId: 'CERT123', fileName: 'cert.pdf' })
