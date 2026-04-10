@@ -9,6 +9,17 @@ jest.mock('../services/emailService', () => ({
   sendWelcomeEmail: jest.fn().mockResolvedValue(true),
 }));
 
+// Mock middleware/auth specifically
+jest.mock('../middleware/auth', () => ({
+  protect: (req, res, next) => {
+    const { mockUser } = require('./helpers/testData');
+    req.user = mockUser;
+    next();
+  },
+  adminOnly: (req, res, next) => next(),
+  generateTokens: () => ({ accessToken: 'at', refreshToken: 'rt' })
+}));
+
 describe('Authentication API', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -16,7 +27,9 @@ describe('Authentication API', () => {
 
   describe('POST /api/auth/register', () => {
     it('should register a new user and send OTP', async () => {
-      User.findOne.mockResolvedValue(null);
+      User.findOne.mockReturnValue({
+        select: jest.fn().mockResolvedValue(null)
+      });
       User.create.mockResolvedValue(mockUser);
 
       const res = await request(app)
@@ -44,12 +57,13 @@ describe('Authentication API', () => {
   describe('POST /api/auth/login', () => {
     it('should login verified user', async () => {
       User.findOne.mockReturnValue({
-        select: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue({
-          ...mockUser,
-          isVerified: true,
-          comparePassword: jest.fn().mockResolvedValue(true),
-          save: jest.fn().mockResolvedValue(true)
+        select: jest.fn().mockReturnValue({
+          exec: jest.fn().mockResolvedValue({
+            ...mockUser,
+            isVerified: true,
+            comparePassword: jest.fn().mockResolvedValue(true),
+            save: jest.fn().mockResolvedValue(true)
+          })
         })
       });
 
@@ -63,10 +77,11 @@ describe('Authentication API', () => {
 
     it('should reject unverified login', async () => {
       User.findOne.mockReturnValue({
-        select: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue({
-          ...mockUser,
-          isVerified: false
+        select: jest.fn().mockReturnValue({
+          exec: jest.fn().mockResolvedValue({
+            ...mockUser,
+            isVerified: false
+          })
         })
       });
 

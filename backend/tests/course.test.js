@@ -11,6 +11,7 @@ jest.mock('../middleware/auth', () => ({
     req.user = mockUser;
     next();
   },
+  adminOnly: (req, res, next) => next(),
   generateTokens: () => ({ accessToken: 'at', refreshToken: 'rt' })
 }));
 
