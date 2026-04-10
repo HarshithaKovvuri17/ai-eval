@@ -57,13 +57,11 @@ describe('Authentication API', () => {
   describe('POST /api/auth/login', () => {
     it('should login verified user', async () => {
       User.findOne.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          exec: jest.fn().mockResolvedValue({
-            ...mockUser,
-            isVerified: true,
-            comparePassword: jest.fn().mockResolvedValue(true),
-            save: jest.fn().mockResolvedValue(true)
-          })
+        select: jest.fn().mockResolvedValue({
+          ...mockUser,
+          isVerified: true,
+          comparePassword: jest.fn().mockResolvedValue(true),
+          save: jest.fn().mockResolvedValue(true)
         })
       });
 
@@ -77,11 +75,9 @@ describe('Authentication API', () => {
 
     it('should reject unverified login', async () => {
       User.findOne.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          exec: jest.fn().mockResolvedValue({
-            ...mockUser,
-            isVerified: false
-          })
+        select: jest.fn().mockResolvedValue({
+          ...mockUser,
+          isVerified: false
         })
       });
 
