@@ -14,7 +14,8 @@ jest.mock('../middleware/auth', () => ({
   protect: (req, res, next) => {
     req.user = mockUser;
     next();
-  }
+  },
+  adminOnly: (req, res, next) => next()
 }));
 
 describe('Certificate Routes', () => {
