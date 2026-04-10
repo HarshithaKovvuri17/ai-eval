@@ -70,9 +70,9 @@ pipeline {
                     def scannerHome = tool 'SonarScanner'
                     withSonarQubeEnv('SonarQubeServer') {
                         if (isUnix()) {
-                            sh "${scannerHome}/bin/sonar-scanner"
+                            sh "${scannerHome}/bin/sonar-scanner -Dsonar.token=\$SONAR_AUTH_TOKEN"
                         } else {
-                            bat "${scannerHome}\\bin\\sonar-scanner.bat"
+                            bat "${scannerHome}\\bin\\sonar-scanner.bat -Dsonar.token=%SONAR_AUTH_TOKEN%"
                         }
                     }
                 }
