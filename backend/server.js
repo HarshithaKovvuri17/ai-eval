@@ -8,9 +8,10 @@ const path      = require('path');
 const app = express();
 
 // ── Middleware ────────────────────────────────────────────────────────────────
+app.set('trust proxy', 1); // Trust proxy for rate limiter (satisfies SonarQube)
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' })); // Reduced from 10mb for DoS protection
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use('/certificates', express.static(path.join(__dirname, 'certificates')));
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });

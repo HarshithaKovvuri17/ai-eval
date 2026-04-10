@@ -15,12 +15,22 @@ exports.getStats = async (req, res) => {
       Attempt.find({ status:'evaluated' }).sort({ createdAt:-1 }).limit(8)
         .populate('user','name email avatar').populate('course','title'),
     ]);
+    const passRate = (passAgg && passAgg[0] && passAgg[0].total > 0) 
+      ? Math.round((passAgg[0].passed / passAgg[0].total) * 100) 
+      : 0;
+
     res.json({
-      stats: { totalStudents, totalCourses, totalAttempts,
-        passRate: passAgg[0] ? Math.round((passAgg[0].passed/passAgg[0].total)*100) : 0 },
-      recentAttempts: recent,
+      stats: { 
+        totalStudents, 
+        totalCourses, 
+        totalAttempts,
+        passRate 
+      },
+      recentAttempts: recent || [],
     });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) { 
+    res.status(500).json({ message: err.message || 'Error fetching stats' }); 
+  }
 };
 
 // GET /api/admin/courses

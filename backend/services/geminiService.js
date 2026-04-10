@@ -43,7 +43,7 @@ async function geminiChat(messages, temperature = 0.7, max_tokens = 4096, jsonMo
       return result.response.text();
     } catch (err) {
       attempts++;
-      const isRetryable = err.message.includes('503') || err.message.includes('429') || err.message.includes('Service Unavailable') || err.message.includes('high demand');
+      const isRetryable = err && err.message && (err.message.includes('503') || err.message.includes('429') || err.message.includes('Service Unavailable') || err.message.includes('high demand'));
       
       if (isRetryable && attempts < maxAttempts) {
         const backoff = Math.pow(2, attempts) * 1000;
@@ -52,7 +52,8 @@ async function geminiChat(messages, temperature = 0.7, max_tokens = 4096, jsonMo
         continue;
       }
       
-      console.error('❌ Gemini Error:', err.message);
+      const errMsg = err && err.message ? err.message : 'Unknown AI Error';
+      console.error('❌ Gemini Error:', errMsg);
       throw new Error(`AI Service currently busy or unavailable. Please try again in a few seconds.`);
     }
   }
