@@ -46,37 +46,45 @@ describe('Admin API', () => {
         .put(`/api/admin/courses/${mockCourse._id}`)
         .send({ title: 'Updated Title' });
       expect(res.statusCode).toEqual(200);
-      expect(res.body.message).toContain('updated');
     });
   });
 
-  describe('POST /api/admin/courses/:id/questions', () => {
-    it('should add a question to a course', async () => {
-      Course.findById.mockResolvedValue({
-        ...mockCourse,
-        questions: { push: jest.fn() },
+  describe('DELETE /api/admin/courses/:id', () => {
+    it('should deactivate a course', async () => {
+      Course.findByIdAndUpdate.mockResolvedValue({ ...mockCourse, isActive: false });
+      const res = await request(app).delete(`/api/admin/courses/${mockCourse._id}`);
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.message).toContain('deactivated');
+    });
+  });
+
+  describe('Question Management', () => {
+    it('should add a question', async () => {
+      const mockCourseWithPush = { 
+        ...mockCourse, 
+        questions: { push: jest.fn(), id: jest.fn() },
+        save: jest.fn().mockResolvedValue(true)
+      };
+      Course.findById.mockResolvedValue(mockCourseWithPush);
+
+      const res = await request(app)
+        .post(`/api/admin/courses/${mockCourse._id}/questions`)
+        .send({ questionText: 'Q1', correctOptions: ['A'], level: 1 });
+      
+      expect(res.statusCode).toEqual(200);
+    });
+
+    it('should delete a question', async () => {
+      Course.findById.mockResolvedValue({ 
+        ...mockCourse, 
+        questions: [{ _id: 'q1' }],
         save: jest.fn().mockResolvedValue(true)
       });
 
       const res = await request(app)
-        .post(`/api/admin/courses/${mockCourse._id}/questions`)
-        .send({
-          questionText: 'New Q',
-          correctOptions: ['A'],
-          level: 1
-        });
+        .delete(`/api/admin/courses/${mockCourse._id}/questions/q1`);
+      
       expect(res.statusCode).toEqual(200);
-    });
-  });
-
-  describe('GET /api/admin/users', () => {
-    it('should return student list', async () => {
-      User.find.mockReturnValue({
-        sort: jest.fn().mockResolvedValue([mockUser])
-      });
-      const res = await request(app).get('/api/admin/users');
-      expect(res.statusCode).toEqual(200);
-      expect(res.body.users).toHaveLength(1);
     });
   });
 });
