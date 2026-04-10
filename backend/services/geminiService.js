@@ -137,12 +137,12 @@ Respond ONLY with valid JSON, no markdown:
 function fallback(correctAnswer, userAnswer) {
   const stop   = new Set(['the','a','an','is','are','was','were','it','in','of','to','and','or','for','on','at','by','with','this','that','be']);
   const tokens = s => s.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(w => w.length > 2 && !stop.has(w));
-  const cor    = tokens(correctAnswer);
-  const usr    = tokens(userAnswer);
+  const cor    = tokens(correctAnswer || '');
+  const usr    = tokens(userAnswer || '');
   if (!cor.length) return { score: 50, feedback: 'Answer accepted.' };
   const score  = Math.round(Math.min(1, (usr.filter(w => cor.includes(w)).length / cor.length) * 1.35) * 100);
   return {
-    score,
+    score: isNaN(score) ? 0 : score,
     feedback: score >= 75 ? 'Great answer – key concepts well covered.' :
               score >= 50 ? 'Partial answer. Review for completeness.' :
               score >= 25 ? 'Several key points are missing. Study the topic carefully.' :

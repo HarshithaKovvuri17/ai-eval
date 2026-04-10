@@ -2,6 +2,7 @@ require('dotenv').config();
 const express   = require('express');
 const mongoose  = require('mongoose');
 const cors      = require('cors');
+const helmet    = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path      = require('path');
 
@@ -9,6 +10,7 @@ const app = express();
 
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.set('trust proxy', 1); // Trust proxy for rate limiter (satisfies SonarQube)
+app.use(helmet()); // Sets various HTTP headers for security
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
 app.use(express.json({ limit: '1mb' })); // Reduced from 10mb for DoS protection
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));

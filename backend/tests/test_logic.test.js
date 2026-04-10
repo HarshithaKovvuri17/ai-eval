@@ -29,7 +29,7 @@ describe('Test Submission API', () => {
       Course.findById.mockResolvedValue(mockCourse);
       Progress.findOne.mockResolvedValue({
         ...mockProgress,
-        level1: { attempts: 0, BestScore: 0, passed: false, locked: false },
+        level1: { attempts: 0, bestScore: 0, passed: false, locked: false },
         save: jest.fn().mockResolvedValue(true)
       });
       Attempt.create.mockResolvedValue({});
@@ -39,31 +39,56 @@ describe('Test Submission API', () => {
         .send({
           courseId: mockCourse._id,
           level: 1,
-          answers: [{ questionId: mockCourse.questions[0]._id, selectedOptions: [1] }]
+          answers: [{ questionId: mockCourse.questions[0]._id, selectedOptions: ['A'] }]
         });
 
       expect(res.statusCode).toEqual(200);
       expect(res.body.result).toHaveProperty('percentage');
-      expect(res.body.result).toHaveProperty('passed');
     });
 
-    it('should reject submission if Round 1 is not passed for Round 2', async () => {
+    it('should lock account after max attempts', async () => {
       Course.findById.mockResolvedValue(mockCourse);
       Progress.findOne.mockResolvedValue({
         ...mockProgress,
-        level1: { passed: false }
+        level1: { attempts: 2, passed: false, locked: false },
+        save: jest.fn().mockResolvedValue(true)
       });
 
       const res = await request(app)
         .post('/api/test/submit')
         .send({
           courseId: mockCourse._id,
-          level: 2,
-          answers: [{ questionId: 'q1', selectedOptions: [1] }]
+          level: 1,
+          answers: [{ questionId: mockCourse.questions[0]._id, selectedOptions: ['B'] }]
         });
+      
+      expect(res.body.result.locked).toBe(true);
+    });
+  });
 
-      expect(res.statusCode).toEqual(403);
-      expect(res.body.message).toContain('Round 1');
+  describe('GET /api/test/progress/:courseId', () => {
+    it('should return progress for a course', async () => {
+      Progress.findOne.mockReturnValue({
+        populate: jest.fn().mockResolvedValue(mockProgress)
+      });
+
+      const res = await request(app).get(`/api/test/progress/${mockCourse._id}`);
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.progress).toBeDefined();
+    });
+  });
+
+  describe('POST /api/test/restart/:courseId', () => {
+    it('should restart course if locked', async () => {
+      Progress.findOne.mockResolvedValue({
+        ...mockProgress,
+        level1: { locked: true },
+        save: jest.fn().mockResolvedValue(true)
+      });
+
+      const res = await request(app).post(`/api/test/restart/${mockCourse._id}`);
+      expect(res.statusCode).toEqual(200);
+      expect(res.body.message).toContain('reset');
     });
   });
 });

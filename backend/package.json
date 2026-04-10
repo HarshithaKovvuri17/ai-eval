@@ -9,6 +9,7 @@
     "test:coverage": "jest --coverage --coverageDirectory=coverage --coverageReporters=lcov"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.21.0",
     "axios": "^1.6.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
@@ -16,12 +17,12 @@
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
     "google-auth-library": "^9.4.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.3",
     "nodemailer": "^6.9.7",
     "pdfkit": "^0.14.0",
-    "uuid": "^9.0.1",
-    "@google/generative-ai": "^0.21.0"
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "jest": "^29.7.0",
